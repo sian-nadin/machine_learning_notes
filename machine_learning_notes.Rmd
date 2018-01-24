@@ -35,10 +35,16 @@ def NBAccuracy(features_train, labels_train, features_test, labels_test):
     from sklearn.naive_bayes import GaussianNB
     ### create classifier
     clf = GaussianNB()
+    ### note the amount of time to fit data
+    t0 = time()
     ### fit the classifier on the training features and labels
     clf.fit(features_train, labels_train)
+    print "training time:", round(time()-t0, 3), "s"
+    
+    t0 = time()
     ### use the trained classifier to predict labels for the test features
     pred = clf.predict(features_test)
+    print "prediction time:", round(time()-t0, 3), "s"
     ### calculate and return the accuracy on the test data
     from sklearn.metrics import accuracy_score
     accuracy = accuracy_score(labels_test, pred) 
@@ -66,7 +72,7 @@ Summarising the above in a diagram:
 ![](screenshots/cancer_3.png) 
 
 ## Bayes rule for Classification
-say we have two people _ Chris and Sarah. Tey often talk about love, deal and life in their emails 
+Say we have two people _ Chris and Sarah. Tey often talk about love, deal and life in their emails 
 Chris talks about:
 * love 10% of the time
 * deal 80% of the time
@@ -77,9 +83,24 @@ Sarah talks about:
 * life 30% of the time
 Given this information we can use Naive baye to detremine, based on a random email, who's the likely person who sent this email. 
 Say we have the email "Life Deal" we ca use Baye's rule to predict who sent this. There's a 50% (prior)probability that either Chris or Sarah sent this email.
-Probabilty it was Chris: 0.1 . 0.8 . 0.5 = 0.04
-Probability it was Sarah: 0.3 . 0.2 . 0.5 = 0.03
-It's likely that Chris sent the email. 
+(Joint)Probabilty it was Chris: 0.1 . 0.8 . 0.5 = 0.04
+(Joint)Probability it was Sarah: 0.3 . 0.2 . 0.5 = 0.03
+The posterior probability for Chris is: 0.04/0.07 = 0.57 
+The posterior probability for Sarah is: 0.03/0.07 = 0.43
+
+## Pros & cons of Naive Bayes:
+* This method ignores the order of words which is actually quite imporatnat in text. It doesn't really understand the text, it just looks at word frequency to do the classification.
+* However, it's really easy to implement and simple to run. 
+* One particular feature of Naive Bayes is that it’s a good algorithm for working 
+with text classification. When dealing with text, it’s very common to treat each unique 
+word as a feature, and since the typical person’s vocabulary is many thousands of words, 
+this makes for a large number of features. The relative simplicity of the algorithm and the 
+independent features assumption of Naive Bayes make it a strong performer for classifying texts. 
+* Naive Bayes wouldn't be as good at phrases. for example, if you were ooking up the team Chicago Bulls you don't want results of just bulls or the city of Chicago so it wouldn't work well in a case like this. 
+* So make sure if you're going to use it that it suits the question you're going to ask and test it.
+
+## Naive Bayes Mini project
+
 
 
 
