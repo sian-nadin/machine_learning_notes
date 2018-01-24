@@ -99,13 +99,88 @@ independent features assumption of Naive Bayes make it a strong performer for cl
 * Naive Bayes wouldn't be as good at phrases. for example, if you were ooking up the team Chicago Bulls you don't want results of just bulls or the city of Chicago so it wouldn't work well in a case like this. 
 * So make sure if you're going to use it that it suits the question you're going to ask and test it.
 
-## Naive Bayes Mini project
+***
+
+# Support Vector Machines (SVMs)
+Finds a seperating line (Hyperplane) between data of two classes. 
+![](screenshots/SVM_margin.png)
+* Greater margin means it will be more *robust* in terms of minimising classification errors. 
+* SVM first makes sure to get the correct classification and then maximises the margin.
+* Can also tolerate indivdual outliers. 
+![](screenshots/svm_outlier.png)
+
+### The advantages of support vector machines are:
+* Effective in high dimensional spaces.
+* Still effective in cases where number of dimensions is greater than the number of samples.
+* Uses a subset of training points in the decision function (called support vectors), so it is also memory efficient.
+* Versatile: different Kernel functions can be specified for the decision function. Common kernels are provided, but it is also possible to specify custom kernels.
+
+### The disadvantages of support vector machines include:
+* If the number of features is much greater than the number of samples, avoid over-fitting in choosing Kernel functions and regularization term is crucial.
+* SVMs do not directly provide probability estimates, these are calculated using an expensive five-fold cross-validation.
+
+Takes as input two arrays: an array X of size [n_samples, n_features] holding the training samples, and an array y of class labels (strings or integers), size [n_samples]:
+```{python}
+>>>
+>>> from sklearn import svm
+>>> X = [[0, 0], [1, 1]]
+>>> y = [0, 1]
+>>> clf = svm.SVC()
+>>> clf.fit(X, y)  
+SVC(C=1.0, cache_size=200, class_weight=None, coef0=0.0,
+    decision_function_shape='ovr', degree=3, gamma='auto', kernel='rbf',
+    max_iter=-1, probability=False, random_state=None, shrinking=True,
+    tol=0.001, verbose=False)
+```
+After being fitted, the model can then be used to predict new values:
+```{python}
+>>>
+>>> clf.predict([[2., 2.]])
+array([1])
+```
+
+## Non linear SVM
+We don't need a straight line for seperating data with SVMs. We can add a new non linear feature to seperate data. 
+In the example below we add a new feature x^2 + y^2 in order to make the data linearly seperable.
+(This essentialy gives us the distance from the origin)
+This leads to the mapping between z and y which is depucted in the graph in the upper right corner of image below.
+![](screenshots/svm_map_z.png)
+
+Question: Which new feature would allow us to seperate the values in the graph below?
+![](screenshots/svm_choose_feature.png)
+The answer is to map the values of x to |x| as it would give us the chart below:
+![](screenshots/svm_|x|.png)
+
+## Kernels
+We can use kernels to do this mapping into higher dimensional space allowing you to seperate data using a non linear seperation. 
+![](screenshots/svm_kernel.png)
+You can pass in what kernel you would like to use as a parameter when setting the classifier. There are multiple kernels to choose from including: linear, poly, rbf etc. as well the option to create your own custom kernel. 
+
+## SVM parameters
+* Some of the most important parameters for an SVM include: Kernel, C and gamma. 
+* The 'gamma' parameter actually has no effect on the 'linear' kernel for SVMs. The key parameter for linear kernel functions is "C".
+* *C* controls the trade off between a smooth decision boundary and classifying training points correctly. The higher the value of C the more training points will be correct, i.e. you'll get a more intricate boundary line with a large value for C where it can wiggle around individual data points to get evrything correct but at the cost of it could be more complex than you'd like it.
+![](screenshots/svm_c_parameter.png)
+* *gamma* Defines how far the influence of a single training example reaches. If you have a high gamma then the decision boundary details are going to be dependent on the points that are very close to it, which leaves it effectively ignoring the points taht fall far away from the decision boundary. 
+* On the other hand, if we have a low value for gamma then even the far away points get takn into consideration when deciding where to draw the decision boundary. 
+* For high values of gamma you can end up with a wiggly decision boundary. 
+* If we have a low value for gamma then the points near the decision boundary have a low weighting on deciding where to draw the deciso boundary. This makes the decision boundary a little more smoother (as in image below).
+![](screenshots/svm_gamma_parameter.png)
+
+## Overfitting
+We can end up using machine learning that fits the training points to an erratic looking boundary when a much simpler one would do well, as in image below. You can control overfitting with the C, gamma and kernel parameters.
+![](screenshots/svm_overfitting.png)
+
+## SVM strengths and weaknesses
+* Work well in complicated domains with a clear margin of seperation 
+* Don't perform as well in very large data sets or when there's lots of noise in the data. 
+* If you have a large data set with lots of features then SVM might be quite slow and prone to overfitting to the noise in the data.
+* 
 
 
+```{python}
 
-
-
-
+```
 
 
 
