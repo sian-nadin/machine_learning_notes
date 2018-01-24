@@ -1,0 +1,7 @@
+# Intro to machine learning
+
+## Naive Bayes
+
+## Decision surface
+Algorithm takes in data and creates a decision surface that can predict whther future cases will land in a certain category. 
+When the decision surface is a straight line it is linear.
