@@ -1,5 +1,4 @@
-# Intro to machine learning
-## Supervised learning
+# Intro to machine learning - Supervised learning
 
 ## Decision surface
 Algorithm takes in data and creates a decision surface that can predict whther future cases will land in a certain category. 
@@ -265,17 +264,112 @@ Our general suggestion is to try a few different algorithms for each problem. Tu
 ***
 
 # Decision Trees
+Decision Trees (DTs) are a non-parametric supervised learning method used for classification and regression. The goal is to create a model that predicts the value of a target variable by learning simple decision rules inferred from the data features.
+Decision trees allow you to ask multiple linear questions, one after the other. 
+e.g. Only want to go windsurfing when it's sunny and windy:
+![](screenshots/DT_eg.png)
+Another e.g:
+![](screenshots/DT_eg_2.png)
+
+Starter code:
+```{python}
+>>>
+>>> from sklearn import tree
+>>> X = [[0, 0], [1, 1]]
+>>> Y = [0, 1]
+>>> clf = tree.DecisionTreeClassifier()
+>>> clf = clf.fit(X, Y)
+```
+After being fitted, the model can then be used to predict the class of samples:
+```{python}
+>>>
+>>> clf.predict([[2., 2.]])
+array([1])
+```
+
+## Decision tree parameters
+* *min_sample_split*: `decide whether or not to continue splitting the bottom most part of the tree (see pic below)
+![](screenshots/DT_min_sample_split.png)
+
+* Going quite far down the tree can lead to overplotiing of your data. Setting ahigher value for min_sample_splitting can help alleviate this.
+![](screenshots/DT_min_sam_split.png)
+
+## Entropy
+![](screenshots/DT_entropy.png)
+e.g. If speed limit is in effect, it doesn't matter you'll just be slow. whereas if the speed limit isn't in effect you can go fast when the terrain is good.
+
+![](screenshots/DT_entropy_quiz.png)
+I can split based on bumpiness or the speed limit. Let's say we're only going to compare a half of each graph. The second graph has more purity, i.e. more data of one paticular class. 
 
 
+### Formula for entropy
+![](screenshots/DT_entropy_formula.png)
+![](screenshots/DT_entropy_intuition.png)
 
+Some sources use other bases for the logarithm (for example, they might use log base 10 or the natural log, with a base of approx. 2.72)--those details can change the maximal value of entropy that you can get. In our case, where there are 2 classes, the log base 2 formula that we use will have a maximal value of 1.
+In practice, when you use a decision tree, you will rarely have to deal with the details of the log base--the important takeaway here is that lower entropy points toward more organized data, and that a decision tree uses that as a way how to classify events. 
 
+Let's work through an example:
+![](screenshots/DT_eg_1.png)
+![](screenshots/DT_eg2.png)
 
+## Information gain
+![](screenshots/DT_information_gain.png)
 
+Let's do an example. We can split the parent tree based on the grade:
+![](screenshots/DT_info_gain_eg.png)
+First, calculate the entropy of the children nodes. So for a steep/flat slope how many are fast/slow
+![](screenshots/DT_info_gain_eg2.png)
+Then calculate the information gain by subtracting the entropy of the children from the entropy of the parent node.
+![](screenshots/DT_info_gain_eg3.png)
 
+* We can also do this calulation when we split on bumpiness. Doing the information gain calculation we find out that we get an information gain of 0 so this would not be a good place to split our tree since we don't gain any more info by doing so. 
+* If we split on speed lilit we get perfect purity so our information gain will be 1 so we would definitely want to make a split here.
+![](screenshots/DT_info_gain_eg4.png)
+* Note in sklearn the criterion paramater is the function to measure the quality of a split. Supported criteria are “gini” for the Gini impurity and “entropy” for the information gain. Gini is the default for Sklearn.
 
+## Bias-Variance
+* A high Bias ML algorithm practically ignores the data, it has almost no capacity to learn anything. This is bad for ML.
+* You could go the othe way and have an algorithm that is extremely perceptive to data and can only replicate stuff it's seen before. This would be a extremely high variance algorithm. This will react very poorly in situations it hasn't seen before. 
+* In reality we want something in the middle. 
 
+## Decision trees strengths and weakness
+* Very easy to use and graphically easy to interpret. 
+* You can buid bigger classifiers out of decision trees in ensemble methods.
+* Downside: prone to overfitting, especially if you have data that has lots of features and a complicated decision tree can overfit the data. Have to be careful with the parameter tunes that you're picking to prevent this from happening. 
 
+## Decision tree mini project
+In this project, we will again try to identify the authors in a body of emails, this time using a decision tree.
+Using the starter code, get a decision tree up and running as a classifier, setting min_samples_split=40. It will probably take a while to train. What’s the accuracy?
+```{python}
+from sklearn import tree
+from sklearn.metrics import accuracy_score
 
+clf = tree.DecisionTreeClassifier(min_samples_split=40)
+t0 = time()
+clf = clf.fit(features_train, labels_train)
+print "training time:", round(time()-t0, 3), "s"
 
+t0 = time()
+pred = clf.predict(features_test)
+print "prediction time:", round(time()-t0, 3), "s"
 
+accuracy = accuracy_score(pred, labels_test)
+print accuracy
+```
+=> Accuracy 97.89%
+=> training time: 48.222 s
+=> prediction time: 0.028 s
 
+* You found in the SVM mini-project that the parameter tune can significantly speed up the training time of a machine learning algorithm. A general rule is that the parameters can tune the complexity of the algorithm, with more complex algorithms generally running more slowly.
+Another way to control the complexity of an algorithm is via the number of features that you use in training/testing. The more features the algorithm has available, the more potential there is for a complex fit. We will explore this in detail in the “Feature Selection” lesson, but you’ll get a sneak preview now.
+
+* What's the number of features in your data? (Hint: the data is organized into a numpy array where the number of rows is the number of data points and the number of columns is the number of features; so to extract this number, use a line of code like len(features_train[0]). )
+=> Number of features: 3785
+
+* go into ../tools/email_preprocess.py, and find the line of code that looks like this:
+selector = SelectPercentile(f_classif, percentile=10)
+Change percentile from 10 to 1, and rerun dt_author_id.py. What’s the number of features now?
+=> Number of features: 379
+
+***
