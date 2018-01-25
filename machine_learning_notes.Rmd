@@ -526,3 +526,181 @@ print accuracy
 
 This cheat sheet from Sklearn can come in use when deciding what algorithm to use
 ![](screenshots/sklearn_alg_cheat_sheet.png)
+
+***
+
+# Datasets and questions
+We will start looking at the dataset of emails from Enron (an energy company that went bankrupt after commiting fraud)
+The Enron fraud is a big, messy and totally fascinating story about corporate malfeasance of nearly every imaginable type. The Enron email and financial datasets are also big, messy treasure troves of information, which become much more useful once you know your way around them a bit. We’ve combined the email and finance data into a single dataset.
+
+![](screenshots/POI.png)
+
+### Deciding on the training set size
+We want to make sure that the data we use for our trainiing set is enough to capture all the trends in the data. 
+Say we have 1,000 data points, we could use:
+* 200 of them for testing and 
+* 800 for training. 
+  * Splitting the 800 into 4 groups of 200 we can test the accuracy using a training set of 200, 400, 600 and 800. 
+* Note: that the increase in accuracy with an increase in training set size will start to plateau at larger sizes.
+* In genral more data is going to give you a better result than a finely tuned algorithm.
+![](screenshots/training_set_size.png)
+We need to make sure we use enough persons of interest in our training data set to distinguish from the innocent people. However, we can't just create more persons of interest(POI) in order to improve our classifier as only a certain number of them actually exist. We don't know if our list of POI's will be enough, so we'll just have to test it and see.
+We can create a list of potential POIs manually by doing some research and seeing who was involved in the case. Take the list of POIs and for each person look for their name in the maildir directory in the data we downloaded and take note if we have emails from that person. 
+
+List of POI's stored in POI.txt file
+
+Data types that we'll likely be dealing with:
+* Salary - numerical
+* Job title - categorical
+* Email timestamp - time series
+* Email content - text
+* Number of emails sent by person - numerical
+* To/from email field - text
+
+## Mini project
+The aggregated Enron email + financial dataset is stored in a dictionary, where each key in the dictionary is a person’s name and the value is a dictionary containing all the features of that person.
+The email + finance (E+F) data dictionary is stored as a pickle file, which is a handy way to store and load python objects directly. Use datasets_questions/explore_enron_data.py to load the dataset.
+
+* How many data points (people) are in the dataset? 
+```{python}
+print len(enron_data)
+```
+146
+
+* For each person, how many features are available?  
+```{python}
+print(len(enron_data["CAUSEY RICHARD A"]))
+```
+Look for just the features aka "values" for one name. That will return the number of values for 1 person which would be the same for all the other people. Answer is 21.
+
+* The “poi” feature records whether the person is a person of interest, according to our definition. How many POIs are there in the E+F dataset?
+```{python}
+counter=0
+for name in enron_data.keys():
+    if enron_data[name]["poi"]==1:
+        counter +=1
+print counter
+```
+
+* We compiled a list of all POI names (in ../final_project/poi_names.txt) and associated email addresses (in ../final_project/poi_email_addresses.py).
+How many POI’s were there total? (Use the names file, not the email addresses, since many folks have more than one address and a few didn’t work for Enron, so we don’t have their emails.)
+
+In the terminal use:
+```{bash}
+grep -c poi_names.txt
+```
+where the option '-c' stands for count
+Or using python:
+```{python}
+count = 0
+with open('poi_names.txt', 'r') as f:
+    for line in f:
+        if '(y)' in line:
+            count += 1
+        elif '(n)' in line:
+            count +=1
+
+print count
+```
+
+* As you can see, we have many of the POIs in our E+F dataset, but not all of them. Why is that a potential problem?
+We might not have enough data to really learn the patterns. In general, more data is always better--only having 18 data points doesn't give you that many examples to learn from.
+
+* Like any dict of dicts, individual people/features can be accessed like so:
+enron_data["LASTNAME FIRSTNAME"]["feature_name"]
+or, sometimes 
+enron_data["LASTNAME FIRSTNAME MIDDLEINITIAL"]["feature_name"]
+
+What is the total value of the stock belonging to James Prentice?
+```{python}
+enron_data["PRENTICE JAMES"]['total_stock_value']
+```
+
+* How many email messages do we have from Wesley Colwell to persons of interest?
+```{python}
+enron_data["COLWELL WESLEY"]['from_this_person_to_poi']
+```
+=> 11 messages
+
+* What’s the value of stock options exercised by Jeffrey K Skilling?
+```{python}
+enron_data["SKILLING JEFFREY K"]['exercised_stock_options']
+```
+=> 19250000
+
+
+In the coming lessons, we’ll talk about how the best features are often motivated by our human understanding of the problem at hand. In this case, that means knowing a little about the story of the Enron fraud.
+If you have an hour and a half to spare, “Enron: The Smartest Guys in the Room” is a documentary that gives an amazing overview of the story. 
+Some of the schemes Enron was involved in:
+* Selling assets to shell companies at the end of each month, and buying them back at the beginning of the next month to hide accounting losses
+* Causing electrical grid failures in California
+* A plan in collaboration with Blockbuster movies to stream movies over the internet
+
+Some of the key players in Enron during the time that most of the fraud occurred:
+* Jeffrey Skilling  - CEO
+* Kenneth Lay - Chairman of board of directors.
+* Andrew S. Fastow - CFO
+
+* Of these three individuals (Lay, Skilling and Fastow), who took home the most money (largest value of “total_payments” feature)?
+How much money did that person get?
+```{python}
+enron_data["LAY KENNETH L"]['total_payments']
+enron_data["SKILLING JEFFREY K"]['total_payments']
+enron_data["FASTOW ANDREW S"]['total_payments']
+```
+=>Lay total payments 103559793
+
+* For nearly every person in the dataset, not every feature has a value. How is it denoted when a feature doesn’t have a well-defined value?
+=> NaN
+
+* How many folks in this dataset have a quantified salary? What about a known email address?
+```{python}
+count_quant_sal=0
+for name in enron_data.keys():
+    if enron_data[name]["salary"]!='NaN':
+        count_quant_sal +=1
+print " The number of quantified salaries is:", count_quant_sal
+
+count_quant_sal=0
+for name in enron_data.keys():
+    if enron_data[name]["email_address"]!='NaN':
+        count_quant_sal +=1
+print " The number of quantified emails is:", count_quant_sal
+```
+
+* A python dictionary can’t be read directly into an sklearn classification or regression algorithm; instead, it needs a numpy array or a list of lists (each element of the list (itself a list) is a data point, and the elements of the smaller list are the features of that point).
+We’ve written some helper functions (featureFormat() and targetFeatureSplit() in tools/feature_format.py) that can take a list of feature names and the data dictionary, and return a numpy array.
+In the case when a feature does not have a value for a particular person, this function will also replace the feature value with 0 (zero).
+
+* As you saw a little while ago, not every POI has an entry in the dataset (e.g. Michael Krautz). That’s because the dataset was created using the financial data you can find in final_project/enron61702insiderpay.pdf, which is missing some POI’s (those absences propagated through to the final dataset). On the other hand, for many of these “missing” POI’s, we do have emails.
+While it would be straightforward to add these POI’s and their email information to the E+F dataset, and just put “NaN” for their financial information, this could introduce a subtle problem. You will walk through that here.
+
+* How many people in the E+F dataset (as it currently exists) have “NaN” for their total payments? What percentage of people in the dataset as a whole is this?
+```{python}
+count_nan_payments=0
+total_number_of_payments = len(enron_data["CAUSEY RICHARD A"])
+for name in enron_data.keys():
+    if enron_data[name]["total_payments"]=='NaN':
+        count_nan_payments +=1
+print " Percentage people with NaN for total payments: ", count_nan_payments
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
