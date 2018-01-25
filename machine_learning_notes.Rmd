@@ -381,5 +381,148 @@ Your algorithm choices are the following:
 * k nearest neighbors
 * random forest
 * adaboost (sometimes also called boosted decision tree)
+![](screenshots/CYOA.png)
+
+***
+
+## K nearest neighbors algorithm
+* k-NN is a type of instance-based learning, or lazy learning, where the function is only approximated locally and all computation is deferred until classification. The k-NN algorithm is among the simplest of all machine learning algorithms.
+* The principle behind nearest neighbor methods is to find a predefined number of training samples closest in distance to the new point, and predict the label from these. The number of samples is a user-defined constant.
+* Both for classification and regression, a useful technique can be to assign weight to the contributions of the neighbors, so that the nearer neighbors contribute more to the average than the more distant ones. For example, a common weighting scheme consists in giving each neighbor a weight of 1/d, where d is the distance to the neighbor.
+* The neighbors are taken from a set of objects for which the class (for k-NN classification) or the object property value (for k-NN regression) is known. This can be thought of as the training set for the algorithm, though no explicit training step is required.
+* The training examples are vectors in a multidimensional feature space, each with a class label. The training phase of the algorithm consists only of storing the feature vectors and class labels of the training samples.
+* In the classification phase, k is a user-defined constant, and an unlabeled vector (a query or test point) is classified by assigning the label which is most frequent among the k training samples nearest to that query point.
+* The best choice of k depends upon the data; generally, larger values of k reduce the effect of noise on the classification,but make boundaries between classes less distinct.
+* Being a non-parametric method, it is often successful in classification situations where the decision boundary is very irregular.
+
+### Sklearn docs for k nearest neighbors
+
+```{python}
+# loading library
+from sklearn.neighbors import KNeighborsClassifier
+
+# instantiate learning model (k = 3)
+knn = KNeighborsClassifier(n_neighbors=3)
+
+# fitting the model
+knn.fit(X_train, y_train)
+
+# predict the response
+pred = knn.predict(X_test)
+
+from sklearn.metrics import accuracy_score
+# evaluate accuracy
+print accuracy_score(y_test, pred)
+```
+
+### Parameter Tuning with Cross Validation
+In this section, we’ll explore a method that can be used to tune the hyperparameter K.
+
+Obviously, the best K is the one that corresponds to the lowest test error rate, so let’s suppose we carry out repeated measurements of the test error for different values of K. Inadvertently, what we are doing is using the test set as a training set! This means that we are underestimating the true error rate since our model has been forced to fit the test set in the best possible manner. Our model is then incapable of generalizing to newer observations, a process known as overfitting. Hence, touching the test set is out of the question and must only be done at the very end of our pipeline.
+
+An alternative and smarter approach involves estimating the test error rate by holding out a subset of the training set from the fitting process. This subset, called the validation set, can be used to select the appropriate level of flexibility of our algorithm! There are different validation approaches that are used in practice, and we will be exploring one of the more popular ones called k-fold cross validation.
+![](screenshots/KNN_cross_field_validation.png)
+As seen in the image, k-fold cross validation (the k is totally unrelated to K) involves randomly dividing the training set into k groups, or folds, of approximately equal size. The first fold is treated as a validation set, and the method is fit on the remaining k−1k−1 folds. The misclassification rate is then computed on the observations in the held-out fold. This procedure is repeated k times; each time, a different group of observations is treated as a validation set. This process results in k estimates of the test error which are then averaged out.
+
+Cross-validation can be used to estimate the test error associated with a learning method in order to evaluate its performance, or to select the appropriate level of flexibility.
+
+If that is a bit overwhelming for you, don’t worry about it. We’re gonna make it clearer by performing a 10-fold cross validation on our dataset using a generated list of odd K’s ranging from 1 to 50.
+```{python}
+# creating odd list of K for KNN
+myList = list(range(1,50))
+
+# subsetting just the odd ones
+neighbors = filter(lambda x: x % 2 != 0, myList)
+
+# empty list that will hold cv scores
+cv_scores = []
+
+# perform 10-fold cross validation
+for k in neighbors:
+    knn = KNeighborsClassifier(n_neighbors=k)
+    scores = cross_val_score(knn, X_train, y_train, cv=10, scoring='accuracy')
+    cv_scores.append(scores.mean())
+```
+Again, scikit-learn comes in handy with its cross_val_score() method. We specifiy that we are performing 10 folds with the cv=10 parameter and that our scoring metric should be accuracy since we are in a classification setting.
+
+Finally, we plot the misclassification error versus K.
+```{python}
+# changing to misclassification error
+MSE = [1 - x for x in cv_scores]
+
+# determining best k
+optimal_k = neighbors[MSE.index(min(MSE))]
+print "The optimal number of neighbors is %d" % optimal_k
+
+# plot misclassification error vs k
+plt.plot(neighbors, MSE)
+plt.xlabel('Number of Neighbors K')
+plt.ylabel('Misclassification Error')
+plt.show()
+```
+![](screenshots/KNN_calc_best_k.png)
+10-fold cross validation tells us that K=7K=7 results in the lowest validation error.
+
+### Using KNN on Udacity mini project
+
+=> Accuracy 93.6% (using n_neighbors=3)
+=> training time: 0.008 s
+=> prediction time: 0.003 s 
+
+***
+
+## Adaboost algorithm
+AdaBoost, short for Adaptive Boosting, is a machine learning meta-algorithm. It can be used in conjunction with many other types of learning algorithms to improve performance. The output of the other learning algorithms ('weak learners') is combined into a weighted sum that represents the final output of the boosted classifier. AdaBoost is sensitive to noisy data and outliers. In some problems it can be less susceptible to the overfitting problem than other learning algorithms. The individual learners can be weak, but as long as the performance of each one is slightly better than random guessing, the final model can be proven to converge to a strong learner.
+
+```{python}
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
+
+bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=1),
+                                                algorithm ="SAMME",
+                                                n_estimators=200)
+t0=time()
+bdt.fit(features_train, labels_train)
+print "train time:", round(time()-t0, 3), "s"
+
+t0=time()
+pred = bdt.predict(features_test)
+print "pred time:", round(time()-t0, 3), "s"
+accuracy= accuracy_score(pred, labels_test)
+print accuracy
+```
+=> accuracy: 92.4%
+=> train time: 0.616 s
+=> pred time: 0.011 s
+
+***
+
+## Random forest algorithm
+Random forests or random decision forests are an ensemble learning method. Random forest classifier creates a set of decision trees from randomly selected subset of training set. It then aggregates the votes from different decision trees to decide the final class of the test object.
+Suppose training set is given as : [X1, X2, X3, X4] with corresponding labels as [L1, L2, L3, L4], random forest may create three decision trees taking input of subset for example,
+1. [X1, X2, X3]
+2. [X1, X2, X4]
+3. [X2, X3, X4]
+So finally, it predicts based on the majority of votes from each of the decision trees made. This works well because a single decision tree may be prone to a noise, but aggregate of many decision trees reduce the effect of noise giving more accurate results.
+Alternatively, the random forest can apply weight concept for considering the impact of result from any decision tree. Tree with high error rate are given low weight value and vise versa.
+
+```{python}
+from sklearn.ensemble import RandomForestClassifier
+clf = RandomForestClassifier(max_depth=2, random_state=0)
+t0=time()
+clf.fit(features_train, labels_train)
+print "train time:", round(time()-t0, 3), "s"
+
+t0=time()
+pred = clf.predict(features_test)
+print "pred time:", round(time()-t0, 3), "s"
+accuracy=accuracy_score(pred, labels_test)
+print accuracy
+```
+=> Accuracy: 92%
+=> train time: 0.035 s
+=> pred time: 0.001 s
 
 
+This cheat sheet from Sklearn can come in use when deciding what algorithm to use
+![](screenshots/sklearn_alg_cheat_sheet.png)
