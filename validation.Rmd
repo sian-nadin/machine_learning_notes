@@ -1,0 +1,152 @@
+# Validation
+Why use training and testing data?
+* Serves as a check for overfitting
+* Gives estimate of performance on an indpeendent dataset
+
+## Train/Test in sklearn
+We'll use a group of functions that fall under the title "Cross validation". Learning the parameters of a prediction function and testing it on the same data is a methodological mistake: a model that would just repeat the labels of the samples that it has just seen would have a perfect score but would fail to predict anything useful on yet-unseen data. This situation is called overfitting. To avoid it, it is common practice when performing a (supervised) machine learning experiment to hold out part of the available data as a test set.
+
+In scikit-learn a random split into training and test sets can be quickly computed with the train_test_split helper function. Let’s load the iris data set to fit a linear support vector machine on it:
+We can quickly sample a training set while holding out 40% of the data for testing (evaluating) our classifier:
+```{python}
+from sklearn import datasets
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
+
+iris = datasets.load_iris()
+features = iris.data
+labels = iris.target
+
+features_train, features_test, labels_train, labels_test = train_test_split(
+...     iris.data, iris.target, test_size=0.4, random_state=0)
+
+
+#train svm on training data
+clf = SVC(kernel="linear", C=1.)
+clf.fit(features_train, labels_train)
+
+print clf.score(features_test, labels_test)
+```
+
+## Where to use training vs. testing
+![](screenshots/train_test_pca.png)
+
+## K fold cross validation
+There's a tradeoff with splitting your data for testing and training. We want as much data as possible for training our algorithm, but at the same tine we need plenty of data for validating our algorithm.
+![](screenshots/test_train_tradeoff.png)
+With cross validation you partition your dataset into k bins of equal size. For eg, if we have a datset with 200 points and 10 bins, each bin would have 20 data points. 
+In k fold cross validation you run k seperate learning experiments. In each of those, you pick one of those k subsets as your testing set. The remaining k-1 bins are put together into the training set, then you train your machine learning algorithm and test the performance on the testing set. The key thing in cross validation is you run this multiple times. In thi case 10 times, and then you average the 10 different testing set performances for the 10 different hold out sets, so you average the test results from those k experiments. 
+Obviously, this takes more computing time because you now have to run  k seperate learning experiments, but theassesment of the learning algorithm would be more accurate. So if your concern is to have minimum training time then you would do the traditional test/train procedure. 
+
+## K fold in sklearn
+Provides train/test indices to split data in train/test sets. Split dataset into k consecutive folds (without shuffling by default). Each fold is then used once as a validation while the k - 1 remaining folds form the training set.
+
+If our original data comes in some sort of sorted fashion, then we will want to first shuffle the order of the data points before splitting them up into folds, or otherwise randomly assign data points to each fold. If we want to do this using KFold(), then we can add the "shuffle = True" parameter when setting up the cross-validation object.
+
+```{python}
+>>> from sklearn.model_selection import KFold
+>>> X = np.array([[1, 2], [3, 4], [1, 2], [3, 4]])
+>>> y = np.array([1, 2, 3, 4])
+>>> kf = KFold(n_splits=2)
+>>> kf.get_n_splits(X)
+2
+>>> print(kf)  
+KFold(n_splits=2, random_state=None, shuffle=False)
+>>> for train_index, test_index in kf.split(X):
+...    print("TRAIN:", train_index, "TEST:", test_index)
+...    X_train, X_test = X[train_index], X[test_index]
+...    y_train, y_test = y[train_index], y[test_index]
+TRAIN: [2 3] TEST: [0 1]
+TRAIN: [0 1] TEST: [2 3]
+```
+
+If we have concerns about class imbalance, then we can use the StratifiedKFold() class instead. Where KFold() assigns points to folds without attention to output class, StratifiedKFold() assigns data points to folds so that each fold has approximately the same number of data points of each output class. This is most useful for when we have imbalanced numbers of data points in your outcome classes (e.g. one is rare compared to the others). For this class as well, we can use "shuffle = True" to shuffle the data points' order before splitting into folds.
+
+## Cross validation for parameter tuning
+### GridSearch in sklearn
+GridSearchCV is a way of systematically working through multiple combinations of parameter tunes, cross-validating as it goes to determine which tune gives the best performance. The beauty is that it can work through many combinations in only a couple extra lines of code.
+Here's an example from the sklearn documentation:
+```{python}
+parameters = {'kernel':('linear', 'rbf'), 'C':[1, 10]}
+svr = svm.SVC()
+clf = grid_search.GridSearchCV(svr, parameters)
+clf.fit(iris.data, iris.target)
+```
+Let's break this down line by line.
+```{python}
+parameters = {'kernel':('linear', 'rbf'), 'C':[1, 10]} 
+```
+A dictionary of the parameters, and the possible values they may take. In this case, they're playing around with the kernel (possible choices are 'linear' and 'rbf'), and C (possible choices are 1 and 10).
+
+Then a 'grid' of all the following combinations of values for (kernel, C) are automatically generated:
+|('rbf', 1) | ('rbf', 10)|
+|('linear', 1) |('linear', 10) |
+Each is used to train an SVM, and the performance is then assessed using cross-validation.
+```{python}
+svr = svm.SVC()
+```
+This looks kind of like creating a classifier, just like we've been doing since the first lesson. But note that the "clf" isn't made until the next line--this is just saying what kind of algorithm to use. Another way to think about this is that the "classifier" isn't just the algorithm in this case, it's algorithm plus parameter values. Note that there's no monkeying around with the kernel or C; all that is handled in the next line.
+```{python}
+clf = grid_search.GridSearchCV(svr, parameters)
+```
+This is where the first bit of magic happens; the classifier is being created. We pass the algorithm (svr) and the dictionary of parameters to try (parameters) and it generates a grid of parameter combinations to try.
+```{python}
+clf.fit(iris.data, iris.target)
+```
+And the second bit of magic. The fit function now tries all the parameter combinations, and returns a fitted classifier that's automatically tuned to the optimal parameter combination. You can now access the parameter values via 
+```{python}
+clf.best_params_
+```
+
+
+## Mini project
+In this mini-project, you’ll start from scratch in making a training-testing split in the data. This will be the first step toward your final project, of building a POI identifier.
+
+* You’ll start by building the simplest imaginable (unvalidated) POI identifier. The starter code (validation/validate_poi.py) for this lesson is pretty bare--all it does is read in the data, and format it into lists of labels and features. Create a decision tree classifier (just use the default parameters), train it on all the data (you will fix this in the next part!), and print out the accuracy. THIS IS AN OVERFIT TREE, DO NOT TRUST THIS NUMBER! Nonetheless, what’s the accuracy?
+```{python}
+import pickle
+import sys
+sys.path.append("../tools/")
+from feature_format import featureFormat, targetFeatureSplit
+from sklearn import tree
+import numpy as np
+from sklearn.metrics import accuracy_score
+from sklearn import cross_validation
+data_dict = pickle.load(open("../final_project/final_project_dataset.pkl", "r") )
+
+### first element is our labels, any added elements are predictor
+### features. Keep this the same for the mini-project, but you'll
+### have a different feature list when you do the final project.
+features_list = ["poi", "salary"]
+
+data = featureFormat(data_dict, features_list)
+labels, features = targetFeatureSplit(data)
+features_train, features_test, labels_train, labels_test = cross_validation.train_test_split(features, labels, test_size=0.3, random_state=42)
+
+from sklearn import tree
+from sklearn.metrics import accuracy_score
+
+clf = tree.DecisionTreeClassifier()
+
+clf = clf.fit(features_train, labels_train)
+pred = clf.predict(features_test)
+accuracy = accuracy_score(pred, labels_test)
+print accuracy
+
+clf_all = clf.fit(features, labels)
+pred2 = clf_all.predict(features)
+accuracy2 = accuracy_score(pred2, labels)
+print accuracy2
+```
+=> The overfit data has an accuracy of 0.99
+
+* Now you’ll add in training and testing, so that you get a trustworthy accuracy number. Use the train_test_split validation available in sklearn.cross_validation; hold out 30% of the data for testing and set the random_state parameter to 42 (random_state controls which points go into the training set and which are used for testing; setting it to 42 means we know exactly which events are in which set, and can check the results you get). What’s your updated accuracy?
+=>(Answer also in code above. Now have an accuracy of 0.72)
+
+***
+
+# Evaluation metrics
+
+
+
+
