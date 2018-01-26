@@ -571,7 +571,7 @@ print len(enron_data)
 ```{python}
 print(len(enron_data["CAUSEY RICHARD A"]))
 ```
-Look for just the features aka "values" for one name. That will return the number of values for 1 person which would be the same for all the other people. Answer is 21.
+=> Look for just the features aka "values" for one name. That will return the number of values for 1 person which would be the same for all the other people. Answer is 21.
 
 * The “poi” feature records whether the person is a person of interest, according to our definition. How many POIs are there in the E+F dataset?
 ```{python}
@@ -581,6 +581,7 @@ for name in enron_data.keys():
         counter +=1
 print counter
 ```
+=> 18 POIs are present in the dataset.
 
 * We compiled a list of all POI names (in ../final_project/poi_names.txt) and associated email addresses (in ../final_project/poi_email_addresses.py).
 How many POI’s were there total? (Use the names file, not the email addresses, since many folks have more than one address and a few didn’t work for Enron, so we don’t have their emails.)
@@ -678,28 +679,122 @@ While it would be straightforward to add these POI’s and their email informati
 * How many people in the E+F dataset (as it currently exists) have “NaN” for their total payments? What percentage of people in the dataset as a whole is this?
 ```{python}
 count_nan_payments=0
-total_number_of_payments = len(enron_data["CAUSEY RICHARD A"])
+total_number_of_payments = len(enron_data)
 for name in enron_data.keys():
-    if enron_data[name]["total_payments"]=='NaN':
+    if enron_data[name]["total_payments"] =='NaN':
         count_nan_payments +=1
 print " Percentage people with NaN for total payments: ", count_nan_payments
 ```
+=> 21 out of 146 (about 14%) of the people in the dataset don't have total_payments filled in.
+
+* How many POIs in the E+F dataset have “NaN” for their total payments? What percentage of POI’s as a whole is this?
+```{python}
+counter=0
+for name in enron_data.keys():
+    if enron_data[name]["poi"]==1 and enron_data[name]["total_payments"] =='NaN':
+      counter +=1
+
+print counter
+```
+=> 0 out of 18, or 0% of POI's don't have total_payments filled.
+
+* If a machine learning algorithm were to use total_payments as a feature, would you expect it to associate a “NaN” value with POIs or non-POIs?
+=> No training points would have "NaN" for total_payments when the class label is "POI"
 
 
+If we added 10 new POIs to the list which had "NaN" for their total payment the algorithm might interpret this as an indicator of a POI. Adding in the new POI’s in this example, none of whom we have financial information for, has introduced a subtle problem, that our lack of financial information about them can be picked up by an algorithm as a clue that they’re POIs. Another way to think about this is that there’s now a difference in how we generated the data for our two classes--non-POIs all come from the financial spreadsheet, while many POIs get added in by hand afterwards. That difference can trick us into thinking we have better performance than we do--suppose you use your POI detector to decide whether a new, unseen person is a POI, and that person isn’t on the spreadsheet. Then all their financial data would contain “NaN” but the person is very likely not a POI (there are many more non-POIs than POIs in the world, and even at Enron)--you’d be likely to accidentally identify them as a POI, though!
 
+This goes to say that, when generating or augmenting a dataset, you should be exceptionally careful if your data are coming from different sources for different classes. It can easily lead to the type of bias or mistake that we showed here. There are ways to deal with this, for example, you wouldn’t have to worry about this problem if you used only email data--in that case, discrepancies in the financial data wouldn’t matter because financial features aren’t being used. There are also more sophisticated ways of estimating how much of an effect these biases can have on your final answer; those are beyond the scope of this course.
 
+For now, the takeaway message is to be very careful about introducing features that come from different sources depending on the class! It’s a classic way to accidentally introduce biases and mistakes.
 
+***
 
+# Regression - Continuos supervised learning
+The output variable (speed) was constrained to binary values in our previous setup, i.e. slow and fast (a continuous output could be speed in mph). This is known as a discrete output. 
+You can have a continuous output though. For example if the input was height(continuous data) and the output was weight(also continuous data). In this case the output is not binary like light or heavy, it is a continuous concept. This is what we call **continuous supervised learning** . The continuous refers to the output.
 
+Continuous vs. discrete. Define whether our Enron data is continuous or discrete:
+* Email author - discrete 
+* Phone number - discrete (Phone numbers are individual and countable)
+* Income - continuous 
 
+Equation of a line: y = mx + c
+![](screenshots/continuous_output.png)
 
+## sklearn regression
+The following are a set of methods intended for regression in which the target value is expected to be a linear combination of the input variables. In mathematical notion, if y is the predicted value.
 
+y(w, x) = w_0 + w_1 x_1 + ... + w_p x_p
 
+Across the module, we designate the vector w = (w_1,..., w_p) as coef_ and w_0 as intercept. 
+LinearRegression will take in its fit method arrays X, y and will store the coefficients w of the linear model in its coef_ member:
+```{python}
+>>> from sklearn import linear_model
+>>> reg = linear_model.LinearRegression()
+>>> reg.fit ([[0, 0], [1, 1], [2, 2]], [0, 1, 2])
+LinearRegression(copy_X=True, fit_intercept=True, n_jobs=1, normalize=False)
+>>> reg.coef_
+array([ 0.5,  0.5])
+```
 
+* Can predict using reg.predict. However, it's going to be expecting a list of values so even if you have one value, you still need to put it in a list
+```{python}
+reg.predict([27])
+```
+* You might also want to know what the co-efficient(slope) and the intercept are and you can access these as follows (don't forget the underscore):
+```{python}
+reg.coef_
+reg.intercept_
+```
+* To access performance metrics such as r squared use the score function. The higher the r squared value thebetter, it has a max value of 1. You always want to be looking at the score on your testing data because your fitting your regression using your training data. So if tehre's any overfitting going on that'll show up in having a lower score when you look at your testing data :
+```{python}
+## stats on testing data
+reg.score(ages_test, net_worth_test)
+```
+ 
+## Types of errors you get with regression
+You can evaluate your regression by looking at the error values. 
+![](screenshots/linear_reg_errors.png)
+A good fit will minimise the sum of (the absolute value of errors)^2 on all data points. So we want to find the slope and the intercept that will minimise this. There are several algorithms that can help find this. The two most popular are ordinary least sqquares and gradient descent.
+![](screenshots/min_sq_err.png)
+![](screenshots/min_sse.png)
 
+* Sum squared erros(SSE) isn't perfect. In the example below the two graphs have a fit that seem equally as good. However, the graph on the right will have a larger SSE because it has more data points. So the SSE would say the graph on the right has a worse fit when in reality the fit for each graph is about the same.
+As you add more data the SSE will almost certainly go up but it doesn't necessarily mean that our fit is doing a worse job. 
+![](screenshots/larger_sse.png)
 
+## R squared metric for regression
+An evaluation metric that doesn't have the above shortcoming is R squared and is a very popular metric for describing the goddness of fit for a linear regression. R squared is independent of the number of training points.
+![](screenshots/r_sq.png)
+R squared in Sklearn:
+```{python}
+# Do this after fitting the data. 
+print "r-squared score:", reg.score(ages, net_worths)
+```
 
+## When is linear regression good?
+From the plots below, which would be good to use linear regression with?
+![](screenshots/good_lin_reg.png)
+* The fourth graph would be a good candidate for linear regression. 
+* Graph on the lower right - This fxn would be something like y=x^2, whicg is not of the form y=mx+b. There are ways you can fit this fxn but it wouldn't be a linear fxn.
+* The third graph is alost good for linear regression because you can fit it with lines but you need two different lines to fit the pattern adequately. If you tried to fit it with one line it wouldn't be good. You could try and split the data in half and fi one half of the data to one line and the other half to another line. So without fitting it piecewise this would not be a good candidate for linear regression.
+* Second graph - the problem here is that the data is all over the place. There dosen't seem to be a very strong pattern so there's plenty of lines that look very different but would have very similar R squared or SSE. 
+* First graph - For linear regression the equation y = mx+b we're saying that by varying along the x axis (input variable) we can predict the value on the y axis. Howevere, this grph only has one x value and multiple y values. So there's no way we can vary x and predict a change in y. If you tried to fit this data with linear regression we would get infinity for m. 
 
+## Comparing classification and regression
+![](screenshots/comp_class_and_reg.png)
+
+## Multivariate regression
+When your output variable is dependent on more than one input variable.
+For example, we could predict net worth based on more than just one variable, e.g. age and IQ. 
+![](screenshots/multi_v_reg.png)
+* As x1 increase from 20 to 40 y increases by 100. 100/20 = 5
+* As x2 increases from 80 to 100 y increases by 50. 50/20 = 2.5
+* However, if we do 5(20) + (2.5)80 = 300. so we need to add a consatnt of -200 to get the right result.
+
+Another example:
+![](screenshots/multi_v_reg2.png)
 
 
 
