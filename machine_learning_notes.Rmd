@@ -796,6 +796,68 @@ For example, we could predict net worth based on more than just one variable, e.
 Another example:
 ![](screenshots/multi_v_reg2.png)
 
+## Linear regression Mini Project
+We will see if we can use a persons salary and stock options in the Enron dataset to predict the bonus they were paid. 
+* Run the starter code found in regression/finance_regression.py. This will draw a scatterplot, with all the data points drawn in. What target are you trying to predict? What is the input feature being used to predict it?
+Mentally (or better yet, print out the scatterplot and use paper and pencil) sketch out the regression line that you roughly predict.
+  * Target tring to prdeict: Bonus
+  * Input feature being used to predict it: Salary
+
+* In regression, you need training and testing data, just like in classification. This has already been set up in the starter code. Change the value of test_color from "b" to “r” (for “red”), and rerun. 
+You will be fitting your regression using the blue (training) points only. (You may have noticed that instead of the standard 10%, we’ve put 50% of our data into the test set--that’s because in Part 5, we will switch the training and testing datasets around and splitting the data evenly makes this more straightforward.)
+
+*Note: For those students converting Python 2 code to Python 3, see below for some important remarks regarding compatibility.
+From Python 3.3 forward, a change to the order in which dictionary keys are processed was made such that the orders are randomized each time the code is run. This will cause some compatibility problems with the graders and project code, which were run under Python 2.7. To correct for this, add the following argument to the featureFormat call on line 26 of finance_regression.py:
+sort_keys = '../tools/python2_lesson06_keys.pkl'
+This will open up a file in the tools folder with the Python 2 key order.*
+
+* Import LinearRegression from sklearn, and create/fit your regression. Name it reg so that the plotting code will show it overlaid on the scatterplot. Does it fall approximately where you expected it?
+Extract the slope (stored in the reg.coef_ attribute) and the intercept. What are the slope and intercept?
+```{python}
+from sklearn.linear_model import LinearRegression
+reg = LinearRegression()
+reg.fit(feature_train, target_train)
+
+print "Slope:", reg.coef_
+print "Intercept:", reg.intercept_
+```
+=> Regression line falls approximately where expected
+=> Slope: 5.448
+=> Intercept: -102360.54
+
+* Imagine you were a less savvy machine learner, and didn’t know to test on a holdout test set. Instead, you tested on the same data that you used to train, by comparing the regression predictions to the target values (i.e. bonuses) in the training data. What score do you find? You may not have an intuition yet for what a “good” score is; this score isn’t very good (but it could be a lot worse).
+```{python}
+print "Regression score for training data (not advised):", reg.score(feature_train, target_train)
+```
+=> we get an r squared score of 0.046 (bad score!)
+
+* Now compute the score for your regression on the test data, like you know you should. What’s that score on the testing data? If you made the mistake of only assessing on the training data, would you overestimate or underestimate the performance of your regression?
+```{python}
+print "Regression score for testing data:", reg.score(feature_test, target_test)
+```
+=> Get an R squared value of -1.48
+=> A negative 'out-of-sample' R^2 is informative in that it tells you that your model is performing worse than simply fitting the mean. A simple example, when you have more than one feature, would be having a training dataset that doesn't have a lot of variation in one feature, for example, but the test data does (so your model will likely give little weight to that feature).
+When we traditionally think of R^2, we think of the in-sample R^2 (where the regression line is the line of best fit, which constrains R2 to be between zero and 1). The R^2 for 'out-of-sample data' (that is, data that the regression wasn't trained on) has still the upper limit but no lower limit).Typically it is the case that the R^2 on the training set will be larger than on the testing set (as the regression line is the line of best fit for the training data).
+Note that R^2 is only bounded from below by 0 when evaluating a linear regression on its training set. If evaluated on a significantly different set, where the predictions of a regressor are worse than simply guessing the mean value for the whole set, the calculation of R^2 can be negative.
+
+* There are lots of finance features available, some of which might be more powerful than others in terms of predicting a person’s bonus. For example, suppose you thought about the data a bit and guess that the “long_term_incentive” feature, which is supposed to reward employees for contributing to the long-term health of the company, might be more closely related to a person’s bonus than their salary is.
+A way to confirm that you’re right in this hypothesis is to regress the bonus against the long term incentive, and see if the regression score is significantly higher than regressing the bonus against the salary. Perform the regression of bonus against long term incentive--what’s the score on the test data?
+=> Change salary to long_term_incentive in features list: features_list = ["bonus", "long_term_incentive"]
+=> Get a regression of -0.59
+
+* If you had to predict someone’s bonus and you could only have one piece of information about them, would you rather know their salary or the long term incentive that they received?
+=> long_term_incentive would be better as it has a larger R^2 score. 
+
+* This is a sneak peek of the next lesson, on outlier identification and removal. Go back to a setup where you are using the salary to predict the bonus, and rerun the code to remind yourself of what the data look like. You might notice a few data points that fall outside the main trend, someone who gets a high salary (over a million dollars!) but a relatively small bonus. This is an example of an outlier, and we’ll spend lots of time on them in the next lesson.
+
+A point like this can have a big effect on a regression: if it falls in the training set, it can have a significant effect on the slope/intercept if it falls in the test set, it can make the score much lower than it would otherwise be As things stand right now, this point falls into the test set (and probably hurting the score on our test data as a result). Let’s add a little hack to see what happens if it falls in the training set instead. Add these two lines near the bottom of finance_regression.py, right before plt.xlabel(features_list[1]):
+
+reg.fit(feature_test, target_test)
+plt.plot(feature_train, reg.predict(feature_train), color="b") 
+
+Now we’ll be drawing two regression lines, one fit on the test data (with outlier) and one fit on the training data (no outlier). Look at the plot now--big difference, huh? That single outlier is driving most of the difference. What’s the slope of the new regression line?
+=> Slope of the new regression line: 2.27. That’s a big difference, and it’s mostly driven by the outliers. 
+![](screenshots/Figure_1.png)
 
 
 
