@@ -859,5 +859,64 @@ Now we’ll be drawing two regression lines, one fit on the test data (with outl
 => Slope of the new regression line: 2.27. That’s a big difference, and it’s mostly driven by the outliers. 
 ![](screenshots/Figure_1.png)
 
+***
+
+# Outliers
+Outlier Algorithms work as follows: (i) ATrain data (ii) Remove data points with highest residual error (usually around 10% of data is removed) (iii) train again. 
+
+## Mini project
+This project has two parts. In the first part, you will run a regression, and identify and remove the 10% of points that have the largest residual errors. 
+Then you’ll remove those outliers from the dataset and refit the regression.
+In the second part, you will get acquainted with some of the outliers in the Enron finance data, and learn if/how to remove them.
+
+* Start by running the starter code (outliers/outlier_removal_regression.py) and visualizing the points. A few outliers should clearly pop out. Deploy a linear regression, where net worth is the target and the feature being used to predict it is a person’s age (remember to train on the training data!).
+![](screenshots/outliers.png)
+The “correct” slope for the main body of data points is 6.25 (we know this because we used this value to generate the data); what slope does your regression have? => The slope is 5.07
+
+* What is the score you get when using your regression to make predictions with the test data?
+=> 0.878
+
+* In outliers/outlier_cleaner.py, you will find the skeleton for a function called outlierCleaner() that you will fill in with a cleaning algorithm. It takes three arguments: predictions is a list of predicted targets that come from your regression, ages is the list of ages in the training set, and net_worths is the actual value of the net worths in the training set. There should be 90 elements in each of these lists (because the training set has 90 points in it). Your job is to return a list called cleaned_data that has only 81 elements in it, which are the 81 training points where the predictions and the actual values (net_worths) have the smallest errors (90 * 0.9 = 81). The format of cleaned_data should be a list of tuples, where each tuple has the form (age, net_worth, error). 
+```{python}
+def outlierCleaner(predictions, ages, net_worths):
+    # (float(pred) - actual)**2 calculates the error
+    #Create a new list of tuples that consists of 'ages', 'net_worths' and 'errors' by using zip() function.
+    cleaned_data = zip(ages, net_worths, [(float(pred) - actual)**2 for pred, actual in zip(predictions, net_worths)])
+    #Sort our 'cleaned_data' by error values from lowest to highest
+    cleaned_data.sort(key = lambda tup: tup[2])
+
+    for i in range(0, int(len(cleaned_data) * 0.1)):
+        cleaned_data.pop()
+
+    return cleaned_data
+```
+![](screenshots/remove_outliers.png)
+Once this cleaning function is working, you should see the regression result changes. What is the new slope? Is it closer to the “correct” result of 6.25?
+=> slope (w/outliers): [[ 5.07793064]]
+=> r^2 (test w/outliers) 0.878262470366
+=> slope (w/o outliers): [[ 6.36859481]]
+=> r^2 (test w/o outliers) 0.983189455396
+
+***
+In the mini-project for the regressions lesson, you used a regression to predict the bonuses for Enron employees. As you saw, even a single outlier can make a big difference on the regression result. There was something we didn’t tell you, though, which was that the dataset we had you use in that project had already been cleaned of some significant outliers. Identifying and cleaning away outliers is something you should always think about when looking at a dataset for the first time, and now you’ll get some hands-on experience with the Enron data.
+You can find the starter code in outliers/enron_outliers.py, which reads in the data (in dictionary form) and converts it into a sklearn-ready numpy array. Since there are two features being extracted from the dictionary (“salary” and “bonus”), the resulting numpy array will be of dimension N x 2, where N is the number of data points and 2 is the number of features. This is perfect input for a scatterplot; we’ll use the matplotlib.pyplot module to make that plot. ![](screenshots/enron_outlier.png)
+There’s one outlier that should pop out to you immediately. Now the question is to identify the source. We found the original data source to be very helpful for this identification; you can find that PDF in final_project/enron61702insiderpay.pdf 
+What’s the name of the dictionary key of this data point? (e.g. if this is Ken Lay, the answer would be “LAY KENNETH L”).
+=> Looking through the pdf you can see that the outlier is the TOTAL of all salaries and bonuses. This should not be included in the plot.
+
+* A quick way to remove a key-value pair from a dictionary is the following line: dictionary.pop( key, 0 ) Write a line like this (you’ll have to modify the dictionary and key names, of course) and remove the outlier before calling featureFormat(). Now rerun the code, so your scatterplot doesn’t have this outlier anymore. Are all the outliers gone?
+![](screenshots/remove_total.png)
+=> We see 4 more outliers, although none that are as waaaayyy out there as the last example (the "total" line).
+
+* We would argue that there’s 4 more outliers to investigate; let's look at a couple of them. Two people made bonuses of at least 5 million dollars, and a salary of over 1 million dollars; in other words, they made out like bandits. What are the names associated with those points?
+=> SKILLING JEFFREY K and LAY KENNETH L
+
+* Would you guess that these are typos or weird spreadsheet lines that we should remove, or that there’s a meaningful reason why these points are different? (In other words, should they be removed before we, say, try to build a POI identifier?
+=> Yes! They're two of Enron's biggest bosses, and definitely people of interest.
+
+***
+
+
+
 
 
