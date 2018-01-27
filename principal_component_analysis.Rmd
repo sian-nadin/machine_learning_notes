@@ -55,3 +55,114 @@ SelectPercetile just selects the top X percent where you're allowed to specify t
 Let's get rid of the knowledge we already have 4 features. Let's suppose the number of features you have available to you isn't something that you know very well. But you do know that the size and the neighbourhood are going to be underlying latent variables that are sort of driving the trends in all of the features that you have available to you. So the question is, if you want to have 2 output features, what's the most suitable feature selection tool in this scenario? 
 ![](screenshots/PCA_8.png)
 SelectKBest is probably going to be the best answer here, because you know exactly how many you're expecting to get out so it will throw away all of the features except the 2 that are most powerful. SelectPercentile wasn't as good of a choice in this case where we didn't know exactly how many features we had. 
+
+* We have many features available but only a few drive the phenomenons observed. You can use PCA to reduce the dimensionality of your features to turn a whole bunch of features into just a few. It's also a very powrful standalone method in its own right for unsupervised learning. 
+![](screenshots/preserving_info.png)
+Here's an example of what PCA is, transforming from square footage plus number of rooms into a single variable that roughly tracks the size of the house. 
+The principal component IS NOT the same as a regression, heres why: With a regression you're trying to predict an output variable with respect to the value of an input variable. Here we're not really trying to predict anything. We're trying to come up with a direction in the data that we can project our data onto while losing a minimal amount of information. 
+Here's what that means: Once I've found my principal component (once I have the direction of the vector) then I'm going to take my data points and go through a process of projection. Now instead of being the blue circles, the data is going to be the black X's. I've turned it into a one dimensional disttribution. 
+![](screenshots/PCA_projection.png)
+
+## How to determine the Principal component
+We'll use the neighbourhood example in how to determine the principal component. 
+In this context when we talk about variance we mean it in the statistical manner (linked to standard deviation). So data with a smaller variance tends to be clustered together tightly. 
+![](screenshots/variance.png)
+In the image below we can draw an oval that roughly contains most of the data. This oval can be parameterised using two numbers: (i) Distance across the narrowest point (ii) Distance across the longest point. 
+When we project along the direction of largest variance this retains the maximum amount of information in the original data. 
+![](screenshots/distance_across_points.png)
+
+Now let's look at the neighbourhood info for our housing data. When I project down the 2D points onto the 1D line I'm going to be loosing information. The amount of information I loose is equal to the distance between a given point, as it existed in the 2D space, and it's new spot on the line.
+![](screenshots/projection.png)
+The information loss will be the sum of the distances between each of the points in 2D space and their new projected spots on the line. During PCA we want to make sure this sum is as a small as possible so we don't loose much information. 
+![](screenshots/maimal_variane.png) 
+
+## PCA for feature transformation
+We can put all 4 of the features into PCA together, and it can automatocally combine them into new features and rank the relative powers of those new features. So if we ahve the case where we have two latent features that are driving most of the variation in the data, PCA will pick these out and it will call them the first and second proncipal components. Where the first principal component os the one that has the most effect. It's a little bit harder to make these interpretations now because what can and does happen is that the first principal component will be an admixture that has little bits and pieces from potentially all of the features. This is a very powerfull unsupervised learning technique that you can use to fundamentally understand the latent features in your data. 
+![](screenshots/feature_trans.png)
+
+* The max number of PCs is min(n_features, n_data_points).
+![](screenshots/max_pcs.png)
+
+## Review/definition of PCA
+![](screenshots/pca_review.png)
+
+## Applying PCA to the Enron data
+```{python}
+from sklearn.decomposition import PCA
+def doPCA():
+  X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
+  pca = PCA(n_components=2)
+  pca.fit(X)
+  return pca
+  
+pca = doPCA()
+# By printing this line we find out that the first principal component has about 90% of the variation in the data, and the second one has about 10%. 
+print pca.explained_variance_ratio_ # The Eigenvalues
+#The components is going to be a list, that has as many principal components in it as I asked for as a parameter in doPCA()
+first_pc = pca.components_[0]
+second_pc = pca.components_[1]
+
+#Once I've fit my PCA I have to perform a transformation of the data
+transformed_data = pca.transform(data)
+#This code will plot the principal component and the location of all the points along that principalcompoent, as well as the dircetion of the principal component(which is accessed through the information in the elements of the PC vector. . 
+for ii, jj in zip(transformed_data, data):
+  plt.scatter(first_pc[0]*ii[0], first_pc[1]*ii[0], color="r")
+  plt.scatter(second_pc[0]*ii[1], second_pc[1]*ii[1], color="c")
+  #In blue we have the original data
+  plt.scatter(jj[0], jj[1], color="b")
+plt.xlabel("bonus")
+plt.ylabel("long term bonus")
+plt.show()
+```
+
+![](screenshots/enron_pca.png)
+
+## When to use PCA
+1. When you want access to latent features that you think might be showing up in the patterns in your data. Maybe the entire point of what you're trying to do is figure out if there's a latent feature. In other words you just want to know the size of the first principal component. an example of this might be something like can you measure who the big shots are at Enron.
+2. Dimensionality reduction. There's a number of things PCA can do to help you on this front. 
+  (i) Can help you visualise high dimensional data. when you're drawing a csatterplot you only have two dimensions available., but many times you'll have more than two features. So you can project it down to the first two principal componentsand just plot that. Then things like k means clustering might be a lot easier for you to visualise. You're still capturing most of the information in the data but now you can draw it in 2D.
+  (ii) Reduce noise. The hope is that the first and second principal component are capturing the actual patterns in the data and the smaller principal components are just representing noisy variation about those patterns. So by throwing w=away the less important principal components, you're getting rid of that noise. 
+  (iii) Using PCA as pre processing before you use another algorithm. If you have very high dimensionality, and if you have a complex classification algorithm, the algorithm can ve very high variance, it can end up fitting to noise in the data. It can ed up running really slow. There are lots of things that can happen when you have very high input dimensionality with tese algorithms. So you can use PCA to reduce the dimensionality of your input features so that your calssification algorithm works better.   
+![](screenshots/when_to_use_pca.png)
+
+## PCA for facial recognition
+![](screenshots/pca_facial_rec.png)
+
+## Mini Project - eigenfaces
+Our discussion of PCA spent a lot of time on theoretical issues, so in this mini-project we’ll ask you to play around with some sklearn code. The eigenfaces code is interesting and rich enough to serve as the testbed for this entire mini-project.
+
+The starter code can be found in pca/eigenfaces.py. This was mostly taken from the example on the sklearn documentation.
+
+* We mentioned that PCA will order the principal components, with the first PC giving the direction of maximal variance, second PC has second-largest variance, and so on. How much of the variance is explained by the first principal component? The second?
+```{python}
+# FIND VARIANCE EXPLAINED BY FIRST AND SECOND PRINCIPAL COMPONENTS
+print "\npca.explained_variance_ratio_"
+print pca.explained_variance_ratio_
+print "\npca.explained_variance_"
+print pca.explained_variance_
+```
+
+=> Amount of variance explained y the first principal component: 0.19
+=> Amount of variance explained y the second principal component: 0.15
+
+* Now you'll experiment with keeping different numbers of principal components. In a multiclass classification problem like this one (more than 2 labels to apply), accuracy is a less-intuitive metric than in the 2-class case. Instead, a popular metric is the F1 score.
+We’ll learn about the F1 score properly in the lesson on evaluation metrics, but you’ll figure out for yourself whether a good classifier is characterized by a high or low F1 score. You’ll do this by varying the number of principal components and watching how the F1 score changes in response.
+As you add more principal components as features for training your classifier, do you expect it to get better or worse performance?
+=> Ideally, we hope that adding more components will give us more signal information to improve the classifier performance.
+
+* Change n_components to the following values: [10, 15, 25, 50, 100, 250]. For each number of principal components, note the F1 score for Ariel Sharon. (For 10 PCs, the plotting functions in the code will break, but you should be able to see the F1 scores.) If you see a higher F1 score, does it mean the classifier is doing better, or worse?
+|n_components|F1 score for Ariel Sharon|
+|------------|-------------------------|
+| 10 | 0.11 |
+| 15 | 0.33 |
+| 25 | 0.62 |
+| 50 | 0.67 |
+| 100 | 0.67 |
+
+=> It seems the higher the F1 value, the better the fitting is. 
+
+* Do you see any evidence of overfitting when using a large number of PCs? Does the dimensionality reduction of PCA seem to be helping your performance here?
+=> Yes, performance starts to drop with too many PCs. You can see the F1 score starts to drop.
+
+## How to select the number of PCs you should look at
+There's no cut and dry way of deciding how many PCs to use. You should train on different umber of PCs, and see how accuracy responds - cut off when it becomes apparent that adding more PCS doesn't buy you much more discrimination.
