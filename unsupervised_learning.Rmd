@@ -6,3 +6,52 @@ output: html_document
 Unsupervised learning is a type of machine learning algorithm used to draw inferences from datasets consisting of input data without labeled responses.
 
 The most common unsupervised learning method is cluster analysis, which is used for exploratory data analysis to find hidden patterns or grouping in data. The clusters are modeled using a measure of similarity which is defined upon metrics such as Euclidean or probabilistic distance.
+
+* K means works in teo steps: 
+  (i) Assign - Assign cluster centres.
+  (ii) Optimise - Minimise the total quardratic distance of a cluster centre to the points.
+  
+## K means clustering parameters with sklearn:
+* n_clusters: default value is 8but you need to set in on your own based on what makes sense. This might even be a paarmeter that you play around with.  
+* maz_iter = 300 parameter: Rememeber we have an iteration that we go through as we're finding the clusters, where we assign each point to a centroid and then we move the centroid. 300 iterations of this process will usually be a very reasonable number but you may want to change it.
+* n_init: K means clustering has this challenge that depending on what the initial conditions are you can sometimes end up with different clusterings. So you want to repeat the algoritm several times to make sure that in general the ensemble of all the clusterings will give you something that makes sense. This parameter controls how many times it initialises the program and come up with clusters
+
+## Limitations of K means clustering
+* Given a fixed data set and a fixed number of cluster centres when you run k means you **wont** always arrive at the same result. ]
+* K mean could end up finding a local minimum rather than a global minimum. It depends on the initialisations of your cluster centres. K means is a local hill climbing algorithm. As a rule of thumb- the more cluster centres you have, the more local minimums you will end up finding so you must run the algorithm several times to be sure of obtaining the global minimum.
+![](screenshots/local_min.png)
+
+## Mini project
+In this project, we’ll apply k-means clustering to our Enron financial data. Our final goal, of course, is to identify persons of interest; since we have labeled data, this is not a question that particularly calls for an unsupervised approach like k-means clustering.
+Nonetheless, you’ll get some hands-on practice with k-means in this project, and play around with feature scaling, which will give you a sneak preview of the next lesson’s material.
+
+* The starter code can be found in k_means/k_means_cluster.py, which reads in the email + financial (E+F) dataset and gets us ready for clustering. You’ll start with performing k-means based on just two financial features--take a look at the code, and determine which features the code uses for clustering. 
+=> Salary and exercised_stock_options
+
+* Deploy k-means clustering on the financial_features data, with 2 clusters specified as a parameter. Store your cluster predictions to a list called pred, so that the Draw() command at the bottom of the script works properly. In the scatterplot that pops up, are the clusters what you expected?
+```{python}
+from sklearn.cluster import KMeans
+clf = KMeans(n_clusters=2).fit(finance_features)
+pred = clf.predict(finance_features)
+```
+![](screenshots/k_means.png)
+
+* Add a third feature to features_list, “total_payments". Now rerun clustering, using 3 input features instead of 2 (obviously we can still only visualize the original 2 dimensions). Compare the plot with the clusterings to the one you obtained with 2 input features. Do any points switch clusters? How many? This new clustering, using 3 features, couldn’t have been guessed by eye--it was the k-means algorithm that identified it.
+![](screenshots/k_means_2.png)
+
+* In the next lesson, we’ll talk about feature scaling. It’s a type of feature preprocessing that you should perform before some classification and regression tasks. Here’s a sneak preview that should call your attention to the general outline of what feature scaling does.
+What are the maximum and minimum values taken by the “exercised_stock_options” feature used in this example?
+(NB: if you look at finance_features, there are some "NaN" values that have been cleaned away and replaced with zeroes--so while those might look like the minima, it's a bit deceptive because they're more like points for which we don't have information, and just have to put in a number. So for this question, go back to data_dict and look for the maximum and minimum numbers that show up there, ignoring all the "NaN" entries.)
+```{python}
+eso = numpy.array(finance_features)[:, 1]
+eso = eso[eso>0]
+print ('MAX: {}, MIN: {}'.format(numpy.max(eso), numpy.min(eso)))
+```
+
+
+
+
+
+
+
+
