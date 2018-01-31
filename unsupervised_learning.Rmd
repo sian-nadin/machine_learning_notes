@@ -48,10 +48,55 @@ eso = eso[eso>0]
 print ('MAX: {}, MIN: {}'.format(numpy.max(eso), numpy.min(eso)))
 ```
 
+***
 
+# Feature Scaling
 
+If a computer tried to figure out what shirt size Chris should wear by adding the height+weight of Chris and assigning him the same size as the person with the closest number for height+weight it would say he should have a size small. However, our intuition would be that he should have a large as Cameron is also quite tall and although a bit heavier a Large would probably fit Chris a lot better than a small.
+![](screenshots//feature_scaling.png)
+What went wrong is that this metric of height+weight has two very imbalanced features as weight takes on much larger values so it will almost always completely dominate the metric. We need to rescale these features so that they always span comparable ranges, usually between 0 and 1. 
 
+## Feature scaling formula:
+![](screenshots/feature_scaling_formula.png)
+Having the new X' be a value between 0 and 1 has some benefits and downsides. Benefit: You have a very reliable number as to what you can expect in the output. Disadvantage: if you have outliers in your input features then they cankind of mess up your rescaling. 
 
+* Write a function that performs feature scaling:
+```{python}
+def featureScaling(arr):
+    x_min = min(arr)
+    x_max = max(arr)
+    max_minus_min = float(x_max - x_min)
+    rescaled_arr = []
+    i=0
+    while i< len(arr):
+        new_x = (arr[i] - x_min)/max_minus_min
+        rescaled_arr.append(new_x)
+        i+=1
+    return rescaled_arr
+```
+
+## Min/Max scaler in Sklearn
+*Remember to import NumPy as Sklearn uses NumPy arrays*
+Each element of the NumPy array is going to be a different training point, and then each element within that training point is going to be a feature.
+Note: the input is expecting floating point numbers so if you have ints then turn them into floating point numbers by adding a decimal point to them. 
+```{python}
+from sklearn.preprocessing import MinMaxScaler
+import numpy
+data = numpy.array([[-1, 2], [-0.5, 6], [0, 10], [1, 18]])
+scaler = MinMaxScaler()
+rescaled_data = scaler.fit(data)
+```
+
+## which algorithms are affected by rescaling?
+Algorithms in which two dimensions affect the  outcome will be affected by rescaling.
+* K-Means Clustering and SVM requires making trade-offs in dimensions when you calculate the distance. 
+* SVM - You look at the seperation line that maximises distance. That distance calculation trade offs one dimension against another.The same is true for K means clustering, where you have a cluster centre and you compute the distance from the cluster centre to all of the data points. 
+![](screenshots/alg_affec_by_scling.png)
+No affect on decision tress and linear regression:
+* Decision Trees use vertical and horizontal lines so there is no trade off. You just make a cut in one direction and then a cut in another. So you don't have to worry about what's going on in one dimension when you're doing something with the other one.  
+* In linear regression each of our features is going to have a ciefficient that's associated with it. And that coefficient and feature always go together. What's going on with feature A doesn't effect anything with the coefficient of feature B. 
+
+## Mini project
 
 
 
