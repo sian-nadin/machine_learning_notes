@@ -124,5 +124,140 @@ print(scaler.transform(finance_features_test))
 => It would be critical. Emails typically number in the hundreds or low thousands, salaries are usually at least 1000x higher.
 
 ***
+# Text Learning
+**Bag of words technique:** 
+* Take any text and count the frequency of words. Map each phrase from email into a frequency count defined over a dictionary of words that you're interested in. 
+* Word order doesn't matter.
+* Can't handle complex phrases like "Chicago Bulls" (Which is a sports team).
+* Long phrases give different input vectors. By some extent you're biasing yourself to also encode the length of your text not just the frequency of words. 
+![](screenshots/learning_from_text.png)
 
+## Bag of words (aka count vectorizer) in Sklearn
+Convert a collection of text documents to a matrix of token counts.
+Text Analysis is a major application field for machine learning algorithms. However the raw data, a sequence of symbols cannot be fed directly to the algorithms themselves as most of them expect numerical feature vectors with a fixed size rather than the raw text documents with variable length.
+In order to address this, scikit-learn provides utilities for the most common ways to extract numerical features from text content, namely:
+* tokenizing strings and giving an integer id for each possible token, for instance by using white-spaces and punctuation as token separators.
+* counting the occurrences of tokens in each document.
+* normalizing and weighting with diminishing importance tokens that occur in the majority of samples / documents.
+```{python}
+from sklearn.feature_extraction.text import CountVectorizer
+
+vectorizer = CountVectorizer()
+#lets make some sample strings
+string1= 'This is the first document.'
+string2='This is the second second document.'
+string3='And the third one.'
+string4='Is this the first document?'
+#In order to use these strings with countCextorizer they need to be inside a list
+email_list=[string1, string2, string3, string4]
+#fit the data
+bag_of_words = vectorizer.fit(email_list)
+#Transform the data - takes all the words in the corpus and figures out the count of each of the words
+bag_of_words = vectorizer.transform(email_list)
+print(bag_of_words)
+#Take a row from printing the bag of words. Say, for e.g. got a row that says "(1,7) 1". This means that in document number 1 (which is string 2 due to 0 index) the 7th word occurred 1 time. 
+# In this sklearn docs we can see there's an attribute "vocabulary" that tells you the feature number for a specified word.
+print vectorizer.vocabulary_.get("second")
+```
+
+### When it comes to vocabulary not all word are equal.
+* Some words contain more info than others. Words such as "hi", "the", "will" and "of" won't tell you a lot about what's going on in an meail. 
+* We can remove these less important words from the corpus so that we dont generate noise with these words. These words are known as "stopwords". It's common to remove stopwords during a pre processing analysis. 
+
+## How to get Stopwirds out of pythin package NLTK
+In the terminal:
+```{python}
+#Use the python interpreter
+python
+#To get the stopword out we have to import them from NLTK
+from nltk.corpus import stopwords
+#To get a list of stopwords (Need to add language you want in the parameters):
+sw = stopwords.words("english") 
+#We can go into the sw list and see what some of the stopwords are
+sw[0]
+```
+
+### Not all unique words are different
+Say in my corpus I have a veriety of versions of the word respond(unresponsive, response, responsivity, responsiveness), where the meaning changes ever so slightly based on context but they're all basically talking about the same idea. If I naively put these into a bag of wors they're all going to show up as different features, even though the're all getting at roughly the same idea.  
+Lunkily there's a way of bundling these all up together and representing them as a single word, and the way that that happens is using an algorithm called a stemmer. The temmer woulsd apply a function to these words and then strip them down all until they have the same root. 
+![](screenshots/unique_words.png)
+
+### Stemming with NLTK
+```{python}
+#Fire up Python interpreter
+python
+from nltk.stem.snowball import SnowballStemmer
+#create the stemmer and pass in the language you're using
+stemmer = SnowballStemmer("english")
+#Let's try a word from the "responsive" example 
+stemmer.stem("responsiveness")
+#returns "respons"
+```
+
+## TfIdf representation - weighting by term frequency
+* Tf - term frequency (similar to bag of words)
+* Idf - inverse document frequency (weighted by how often word occurs in corpus, i.e. in all of the documents put together)
+* A TfIdf rates the rare words more highly then the common words. This is because the rare words will help you distinguish different messages from each other. 
+
+## Mini project
+In the beginning of this class, you identified emails by their authors using a number of supervised classification algorithms. In those projects, we handled the preprocessing for you, transforming the input emails into a TfIdf so they could be fed into the algorithms. Now you will construct your own version of that preprocessing step, so that you are going directly from raw data to processed features.
+
+You will be given two text files: one contains the locations of all the emails from Sara, the other has emails from Chris. You will also have access to the parseOutText() function, which accepts an opened email as an argument and returns a string containing all the (stemmed) words in the email.
+
+* You’ll start with a warmup exercise to get acquainted with parseOutText(). Go to the tools directory and run parse_out_email_text.py, which contains parseOutText() and a test email to run this function over.
+parseOutText() takes the opened email and returns only the text part, stripping away any metadata that may occur at the beginning of the email, so what's left is the text of the message. 
+
+* In parseOutText(), comment out the following line: 
+
+words = text_string
+
+Augment parseOutText() so that the string it returns has all the words stemmed using a SnowballStemmer (use the nltk package). Rerun parse_out_email_text.py, which will use your updated parseOutText() function--what’s your output now?
+Hint: you'll need to break the string down into individual words, stem each word, then recombine all the words into one string.
+```{python}
+from nltk.stem.snowball import SnowballStemmer
+stemmer = SnowballStemmer("english")
+stemmed_words = [stemmer.stem(token) for token in text_string.split()]
+words = ' '.join(stemmed_words)
+```
+
+* In vectorize_text.py, you will iterate through all the emails from Chris and from Sara. For each email, feed the opened email to parseOutText() and return the stemmed text string. Then do two things:
+1. Remove signature words (“sara”, “shackleton”, “chris”, “germani”--bonus points if you can figure out why it's "germani" and not "germany")
+2. Append the updated text string to word_data -- if the email is from Sara, append 0 (zero) to from_data, or append a 1 if Chris wrote the email.
+
+Once this step is complete, you should have two lists: one contains the stemmed text of each email, and the second should contain the labels that encode (via a 0 or 1) who the author of that email is.
+Running over all the emails can take a little while (5 minutes or more), so we've added a temp_counter to cut things off after the first 200 emails. Of course, once everything is working, you'd want to run over the full dataset.
+```{python}
+### use parseOutText to extract the text from the opened email
+text = parseOutText(email)
+
+### use str.replace() to remove any instances of the words
+words_to_remove = ["sara", "shackleton", "chris", "germani"]
+for word in words_to_remove:
+   text = text.replace(word, '')
+### append the text to word_data
+word_data.append(text)
+### append a 0 to from_data if email is from Sara, and 1 if email is from Chris
+if name == "sara":
+  from_data.append(0)
+else:
+   from_data.append(1)
+
+            email.close()
+```
+
+* Transform the word_data into a tf-idf matrix using the sklearn TfIdf transformation. Remove english stopwords.
+You can access the mapping between words and feature numbers using get_feature_names(), which returns a list of all the words in the vocabulary. How many different words are there?
+```{python}
+#Transform the word_data into a tf-idf matrix using the sklearn TfIdf transformation.
+#Remove english stopwords
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+vectorizer = TfidfVectorizer(stop_words="english", lowercase=True)
+vectorizer.fit_transform(word_data)
+feature_names = vectorizer.get_feature_names()
+
+print 'Number of different words: {0}'.format(len(feature_names))
+```
+
+***
 
